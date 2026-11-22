@@ -2,6 +2,7 @@
 
 // ── Settings ─────────────────────────────────────────────
 const SESSION_LEN = 12;
+const FREE_LEN = 8;
 const START_DATE = new Date(2026, 10, 22); // Sunday 22 Nov 2026: chapter 16 learned
 const START_CHAPTER = 16;
 const LAST_CHAPTER = CHAPTERS.length;
@@ -45,8 +46,10 @@ const chapter = (n) => CHAPTERS.find((c) => c.n === n);
 function poolFor(sel) {
   const max = learnedThrough();
   const unlocked = ITEMS.filter((it) => it.c <= max);
+  const free = FREE.filter((it) => it.c <= max);
   if (sel === "all") return unlocked;
-  if (sel === "mistakes") return unlocked.filter((it) => stats[it.id] && stats[it.id].last === "w");
+  if (sel === "free") return free;
+  if (sel === "mistakes") return unlocked.concat(free).filter((it) => stats[it.id] && stats[it.id].last === "w");
   return unlocked.filter((it) => it.c === sel);
 }
 
@@ -79,6 +82,7 @@ function record(it, ok) {
 function selectionLabel(sel) {
   if (sel === "all") return `Whole book (chapters 1–${learnedThrough()})`;
   if (sel === "mistakes") return "My mistakes";
+  if (sel === "free") return "Free translation";
   const c = chapter(sel);
   return `Chapter ${c.n}: ${c.title}`;
 }
@@ -98,7 +102,13 @@ function renderHome() {
     </header>
     <p class="muted small" style="margin-top:0">세종학당 한국어 1 · ${esc(nextUnlockText())}</p>
 
-    <h2>What do you want to practise?</h2>
+    <h2>Free translation</h2>
+    <button class="card free-card ${selection === "free" ? "sel" : ""}" data-sel="free">
+      <b>English → Korean sentences</b>
+      <div class="small muted">Write whole sentences yourself. Mixes every chapter you've learned, with a focus on verb endings (-고 싶어요, -아서, -으려고…). ${poolFor("free").length} sentences.</div>
+    </button>
+
+    <h2>Grammar drills</h2>
     <div class="row whole">
       <button class="btn secondary whole-btn ${selection === "all" ? "sel" : ""}" data-sel="all">Whole book</button>
       <button class="btn secondary whole-btn ${selection === "mistakes" ? "sel" : ""}" data-sel="mistakes" ${mistakes ? "" : "disabled"}>
@@ -116,7 +126,7 @@ function renderHome() {
       <strong>${esc(selectionLabel(selection))}</strong>
       ${typeof selection === "number" ? `<div class="muted small">${esc(chapter(selection).grammar.join(" · "))}</div>` : ""}
     </div>
-    <button class="btn" id="startBtn" ${pool.length ? "" : "disabled"}>Start · ${Math.min(SESSION_LEN, pool.length)} questions</button>
+    <button class="btn" id="startBtn" ${pool.length ? "" : "disabled"}>Start · ${Math.min(selection === "free" ? FREE_LEN : SESSION_LEN, pool.length)} ${selection === "free" ? "sentences" : "questions"}</button>
   `;
 
   $app.querySelectorAll("[data-sel]").forEach((b) => b.onclick = () => { selection = b.dataset.sel; store.set("selection", selection); renderHome(); });
@@ -133,7 +143,8 @@ let session = null;
 
 function startSession(sel) {
   const pool = poolFor(sel);
-  const queue = pickSession(pool, Math.min(SESSION_LEN, pool.length));
+  const len = sel === "free" ? FREE_LEN : SESSION_LEN;
+  const queue = pickSession(pool, Math.min(len, pool.length));
   session = { sel, queue, i: 0, right: 0, answered: 0, ids: new Set(), missed: [], retried: new Set() };
   renderQuestion();
 }
@@ -148,7 +159,7 @@ function renderQuestion() {
   const it = session.queue[session.i];
   const total = session.queue.length;
   const c = chapter(it.c);
-  const kinds = { mc: "Choose the right form", type: "Type the missing part", order: "Build the Korean sentence" };
+  const kinds = { mc: "Choose the right form", type: "Type the missing part", order: "Build the Korean sentence", free: "Translate into Korean" };
 
   $app.innerHTML = `
     <header>
@@ -168,6 +179,7 @@ function renderQuestion() {
   const body = document.getElementById("qbody");
   if (it.t === "mc") renderMC(it, body);
   else if (it.t === "type") renderType(it, body);
+  else if (it.t === "free") renderFree(it, body);
   else renderOrder(it, body);
 }
 
@@ -251,7 +263,52 @@ function renderOrder(it, body) {
   };
 }
 
-function answer(it, ok, correctText) {
+// Free translation. An exact match with a model answer is right.
+// If every key verb form is there but the sentence differs, you compare and decide.
+// show a key form with the spacing it has in the model answer
+function spaced(form, sentence) {
+  const m = sentence.match(new RegExp(form.split("").join("\\s*")));
+  return m ? m[0] : form;
+}
+function stripSubject(s) { return s.replace(/^(저는|전|제가)/, ""); }
+function renderFree(it, body) {
+  body.innerHTML = `
+    <div class="q" style="font-size:21px">${esc(it.en)}</div>
+    <button class="icon-btn" id="hintBtn" style="padding-left:0">💡 Show hint</button>
+    <div class="hint hidden" id="hint">${esc(it.h)}</div>
+    <form id="ff" autocomplete="off">
+      <textarea class="answer" id="ans" lang="ko" rows="2" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="한국어로 쓰세요"></textarea>
+      <button class="btn" id="checkBtn">Check</button>
+    </form>
+    <div id="self"></div>`;
+  document.getElementById("hintBtn").onclick = (e) => { document.getElementById("hint").classList.remove("hidden"); e.target.remove(); };
+  const input = document.getElementById("ans");
+  setTimeout(() => input.focus(), 50);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); document.getElementById("checkBtn").click(); } });
+  document.getElementById("ff").onsubmit = (e) => {
+    e.preventDefault();
+    const v = stripSubject(norm(input.value));
+    if (!v) return;
+    input.disabled = true;
+    document.getElementById("checkBtn").classList.add("hidden");
+    if (it.a.some((a) => stripSubject(norm(a)) === v)) { input.style.borderColor = "var(--good)"; return answer(it, true); }
+    const missing = it.k.filter((group) => !group.some((form) => v.includes(norm(form))));
+    if (missing.length) { input.style.borderColor = "var(--bad)"; return answer(it, false, it.a[0], missing); }
+    // all key forms present, but worded differently
+    document.getElementById("self").innerHTML = `
+      <div class="feedback good">
+        <div>Your verb forms look right ✓ Your sentence is worded a bit differently from mine:</div>
+        <div class="ans">${esc(it.a[0])}</div>
+        ${it.a.length > 1 ? `<div class="small">Also correct: ${it.a.slice(1).map(esc).join(" · ")}</div>` : ""}
+        <div class="small muted" style="margin-top:6px">Is yours correct too?</div>
+      </div>
+      <div class="row"><button class="btn secondary" id="selfNo">I made a mistake</button><button class="btn" id="selfYes">Mine is right</button></div>`;
+    document.getElementById("selfYes").onclick = () => { document.getElementById("self").innerHTML = ""; input.style.borderColor = "var(--good)"; answer(it, true); };
+    document.getElementById("selfNo").onclick = () => { document.getElementById("self").innerHTML = ""; input.style.borderColor = "var(--bad)"; answer(it, false, it.a[0]); };
+  };
+}
+
+function answer(it, ok, correctText, missing) {
   session.answered++;
   session.ids.add(it.id);
   const firstTry = !session.retried.has(it.id);
@@ -268,11 +325,12 @@ function answer(it, ok, correctText) {
   }
   const fb = document.getElementById("fb");
   fb.innerHTML = ok
-    ? `<div class="feedback good">✓ 맞아요!${it.t === "order" ? "" : ` <span class="muted small">${esc(TIPS[it.g] ? it.g : "")}</span>`}</div>`
+    ? `<div class="feedback good">✓ 맞아요!${it.t === "free" ? `<div class="small" style="margin-top:6px">${it.a.map(esc).join(" · ")}</div>` : it.t === "order" ? "" : ` <span class="muted small">${esc(TIPS[it.g] ? it.g : "")}</span>`}</div>`
     : `<div class="feedback bad">
         <div>Not quite. The answer is:</div>
         <div class="ans">${esc(correctText === "(nothing)" ? "nothing (no particle)" : correctText)}</div>
-        <div class="tip"><b>${esc(it.g)}</b> · ${esc(TIPS[it.g] || "")}</div>
+        ${missing && missing.length ? `<div class="small" style="margin-top:6px">Check these forms: <b>${missing.map((g) => esc(spaced(g[0], it.a[0]))).join(", ")}</b></div>` : ""}
+        ${it.t === "free" ? (it.a.length > 1 ? `<div class="small" style="margin-top:6px">Also correct: ${it.a.slice(1).map(esc).join(" · ")}</div>` : "") + `<div class="tip"><b>Use</b> · ${esc(it.h)}</div>` : `<div class="tip"><b>${esc(it.g)}</b> · ${esc(TIPS[it.g] || "")}</div>`}
         ${firstTry ? `<div class="small muted" style="margin-top:6px">This one will come back in a moment.</div>` : ""}
       </div>`;
   const next = document.getElementById("nextBtn");
@@ -301,8 +359,8 @@ function renderResults() {
       <h2>To review</h2>
       <div class="card"><ul class="list">
         ${s.missed.map((it) => `<li>
-          <div>${it.t === "order" ? esc(it.ko) : blankHtml(it.q, it.a === "(nothing)" ? "∅" : (Array.isArray(it.a) ? it.a[0] : it.a))}</div>
-          <div class="small muted">${esc(it.g)} · ${esc(TIPS[it.g] || "")}</div></li>`).join("")}
+          <div>${it.t === "free" ? `${esc(it.en)}<br><b>${esc(it.a[0])}</b>` : it.t === "order" ? esc(it.ko) : blankHtml(it.q, it.a === "(nothing)" ? "∅" : (Array.isArray(it.a) ? it.a[0] : it.a))}</div>
+          <div class="small muted">${it.t === "free" ? esc(it.h) : `${esc(it.g)} · ${esc(TIPS[it.g] || "")}`}</div></li>`).join("")}
       </ul></div>` : ""}
     <div class="row" style="margin-top:18px">
       <button class="btn secondary" id="homeBtn">Home</button>
