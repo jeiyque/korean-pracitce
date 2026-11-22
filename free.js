@@ -162,6 +162,25 @@ FREE.push(
   { c: 20, en: "My grandmother was sick, so she went to the hospital.", a: ["할머니께서 아프셔서 병원에 가셨어요."], k: [["아프셔서"], ["가셨어요"]], h: "아프다 + -시- + -어서, 가다 + -시- + past" },
 );
 
+// Third batch: words Jenny knows from class (내일, 지난주, 친구, 가방, 사다, 시험, 우유, 신문, 재미있다, 배고프다, 이름, 누구)
+FREE.push(
+  { c: 3, en: "I like milk.", a: ["저는 우유를 좋아해요.", "저는 우유를 좋아합니다.", "우유를 좋아해요."], k: [["우유를"], ["좋아해요", "좋아합니다"]], h: "을/를 + 좋아하다" },
+  { c: 8, en: "Last week I bought a bag.", a: ["지난주에 가방을 샀어요."], k: [["지난주에"], ["샀어요"]], h: "사다 + past" },
+  { c: 11, en: "I was hungry, so I ate a lot.", a: ["배가 고파서 많이 먹었어요."], k: [["고파서"], ["먹었어요"]], h: "배가 고프다 + -아서, 먹다 + past" },
+  { c: 11, en: "The drama is fun, so I want to watch it again.", a: ["드라마가 재미있어서 또 보고 싶어요.", "드라마가 재미있어서 다시 보고 싶어요."], k: [["재미있어서"], ["보고싶어요"]], h: "재미있다 + -어서, 보다 + -고 싶다" },
+  { c: 12, en: "I want to buy a bag, but I don't have time.", a: ["가방을 사고 싶지만 시간이 없어요."], k: [["사고싶지만"], ["없어요"]], h: "사다 + -고 싶다 + -지만" },
+  { c: 13, en: "My friend is reading the newspaper.", a: ["친구가 신문을 읽고 있어요."], k: [["읽고있어요"]], h: "읽다 + -고 있다" },
+  { c: 14, en: "Before the test, I plan to study at the library.", a: ["시험 전에 도서관에서 공부하려고 해요.", "시험을 보기 전에 도서관에서 공부하려고 해요."], k: [["전에"], ["공부하려고해요"]], h: "-기 전에 / N 전에, 공부하다 + -려고 하다" },
+  { c: 15, en: "After the test, please get some good rest.", a: ["시험을 본 후에 푹 쉬세요.", "시험 후에 푹 쉬세요."], k: [["후에"], ["쉬세요"]], h: "-은 후에 / N 후에, 쉬다 + -세요" },
+  { c: 17, en: "I have a test tomorrow, so I have to study.", a: ["내일 시험이 있어서 공부해야 돼요.", "내일 시험이 있어서 공부해야 해요."], k: [["있어서"], ["공부해야돼요", "공부해야해요"]], h: "있다 + -어서, 공부하다 + -어야 되다" },
+  { c: 18, en: "I have a test tomorrow, so let's meet on the weekend.", a: ["내일 시험이 있으니까 주말에 만납시다."], k: [["있으니까"], ["만납시다"]], h: "있다 + -으니까, 만나다 + -ㅂ시다" },
+  { c: 18, en: "The movie is fun, so let's watch it again.", a: ["영화가 재미있으니까 또 봅시다.", "영화가 재미있으니까 다시 봅시다."], k: [["재미있으니까"], ["봅시다"]], h: "재미있다 + -으니까, 보다 + -ㅂ시다" },
+  { c: 19, en: "I went to the store with my friend to buy milk.", a: ["친구랑 우유를 사러 가게에 갔어요.", "친구하고 우유를 사러 가게에 갔어요."], k: [["랑", "하고"], ["사러"], ["갔어요"]], h: "N랑, 사다 + -러, 가다 + past" },
+  { c: 19, en: "Who did you go with?", a: ["누구랑 갔어요?", "누구하고 갔어요?"], k: [["누구랑", "누구하고"], ["갔어요"]], h: "누구 + 랑, 가다 + past" },
+  { c: 20, en: "My grandfather reads the newspaper.", a: ["할아버지께서 신문을 읽으세요.", "할아버지께서 신문을 읽고 계세요."], k: [["께서"], ["읽으세요", "읽고계세요"]], h: "께서 + 읽다 + -으시-" },
+  { c: 20, en: "What is your name? (very polite)", a: ["성함이 어떻게 되세요?"], k: [["성함이"], ["되세요"]], h: "이름 → 성함, 어떻게 되세요" },
+);
+
 (function () {
   const count = {};
   for (const it of FREE) {
