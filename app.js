@@ -121,7 +121,7 @@ function renderHome() {
   $app.innerHTML = `
     <header>
       <h1>문법 연습</h1>
-      <button class="icon-btn" id="statsBtn">Progress ›</button>
+      <span><button class="icon-btn" id="soundBtn" aria-label="${soundOn ? "Sound on" : "Sound off"}" title="Sound for right answers">${soundOn ? "🔊" : "🔇"}</button><button class="icon-btn" id="statsBtn">Progress ›</button></span>
     </header>
     <p class="muted small" style="margin-top:0">세종학당 한국어 1 · ${esc(nextUnlockText())}</p>
 
@@ -177,6 +177,10 @@ function renderHome() {
   });
   document.getElementById("startBtn").onclick = () => startSession(selection);
   document.getElementById("statsBtn").onclick = renderStats;
+  document.getElementById("soundBtn").onclick = () => {
+    soundOn = !soundOn; store.set("sound", soundOn); renderHome();
+    if (soundOn) sparkle();
+  };
   document.getElementById("grammarBtn").onclick = () => renderGrammar();
   document.getElementById("irrStudyBtn").onclick = renderIrregular;
 }
@@ -445,7 +449,28 @@ function renderFree(it, body) {
   };
 }
 
+// ── Sound for right answers ("Sparkle", chosen by Jenny) ──
+let soundOn = store.get("sound", true);
+let audioCtx = null;
+function sparkle() {
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    [1046.5, 1318.5, 1568, 2093].forEach((f, i) => {
+      const t = audioCtx.currentTime + i * 0.07;
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.13, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.4);
+    });
+  } catch (e) { /* no audio available: stay silent */ }
+}
+
 function answer(it, ok, correctText, missing, given) {
+  if (ok) sparkle();
   session.answered++;
   session.ids.add(it.id);
   const firstTry = !session.retried.has(it.id);
@@ -491,6 +516,7 @@ function answer(it, ok, correctText, missing, given) {
 
 // You know your answer is right too: count it, and accept it from now on.
 function overrule(it, given, correctText, firstTry) {
+  sparkle();
   const s = stats[it.id];
   if (s) { s.w = Math.max(0, s.w - 1); s.c++; s.s = 1; s.last = "r"; store.set("stats", stats); }
   if (firstTry) {
