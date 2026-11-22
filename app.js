@@ -183,12 +183,15 @@ function renderQuestion() {
   else if (it.t === "type") renderType(it, body);
   else if (it.t === "free") renderFree(it, body);
   else renderOrder(it, body);
+  const enBtn = body.querySelector(".en-btn");
+  if (enBtn) enBtn.onclick = () => { body.querySelector(".en-txt").classList.remove("hidden"); enBtn.remove(); };
 }
 
 function renderMC(it, body) {
   body.innerHTML = `
     ${it.ctx ? `<div class="ctx">${esc(it.ctx)}</div>` : ""}
     <div class="q" id="qtext">${blankHtml(it.q)}</div>
+    ${it.en ? `<button class="icon-btn en-btn" style="padding-left:0">Show English</button><div class="hint hidden en-txt">${esc(it.en)}</div>` : ""}
     <div class="opts">${shuffle(it.o).map((o) => `<button class="opt" data-o="${esc(o)}">${esc(o === "(nothing)" ? "— (nothing)" : o)}</button>`).join("")}</div>`;
   body.querySelectorAll(".opt").forEach((b) => b.onclick = () => {
     const ok = b.dataset.o === it.a;
@@ -206,6 +209,7 @@ function renderType(it, body) {
   body.innerHTML = `
     ${it.ctx ? `<div class="ctx">${esc(it.ctx)}</div>` : ""}
     <div class="q" id="qtext">${blankHtml(it.q)}</div>
+    ${it.en ? `<button class="icon-btn en-btn" style="padding-left:0">Show English</button><div class="hint hidden en-txt">${esc(it.en)}</div>` : ""}
     <div class="hint">${esc(it.h || "")}</div>
     <form id="tf" autocomplete="off">
       <input class="answer" id="ans" lang="ko" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="한국어로 쓰세요">
@@ -337,6 +341,11 @@ function answer(it, ok, correctText, missing) {
         ${it.t === "free" ? (it.a.length > 1 ? `<div class="small" style="margin-top:6px">Also correct: ${it.a.slice(1).map(esc).join(" · ")}</div>` : "") + `<div class="tip"><b>Use</b> · ${esc(it.h)}</div>` : `<div class="tip"><b>${esc(it.g)}</b> · ${esc(TIPS[it.g] || "")}</div>`}
         ${firstTry ? `<div class="small muted" style="margin-top:6px">This one will come back in a moment.</div>` : ""}
       </div>`;
+  if (it.en && it.t !== "order") {
+    const b = document.querySelector(".en-btn"); if (b) b.remove();
+    const t = document.querySelector(".en-txt"); if (t) t.classList.add("hidden");
+    fb.insertAdjacentHTML("beforeend", `<div class="small muted" style="margin:-6px 0 12px">🇬🇧 ${esc(it.en)}</div>`);
+  }
   const next = document.getElementById("nextBtn");
   next.classList.remove("hidden");
   next.focus();
