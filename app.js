@@ -19,7 +19,17 @@ const store = {
 };
 
 let stats = store.get("stats", {});        // id -> {c: correct, w: wrong, s: streak, last: 'r'|'w'}
-let selection = store.get("selection", "all"); // "all" | chapter number | "mistakes"
+let selection = store.get("selection", "all");
+let accepted = store.get("accepted", {});      // id -> [answers you counted as correct]
+function isAccepted(it, text) {
+  const v = norm(text);
+  return (accepted[it.id] || []).some((a) => norm(a) === v || stripSubject(norm(a)) === stripSubject(v));
+}
+function accept(it, text) {
+  const list = accepted[it.id] || (accepted[it.id] = []);
+  if (!list.some((a) => norm(a) === norm(text))) list.push(text.trim());
+  store.set("accepted", accepted);
+} // "all" | chapter number | "mistakes"
 
 function autoLearned() {
   const days = Math.floor((Date.now() - START_DATE.getTime()) / 86400000);
@@ -221,12 +231,12 @@ function renderType(it, body) {
     e.preventDefault();
     const v = norm(input.value);
     if (!v) return;
-    const ok = it.a.some((a) => norm(a) === v);
+    const ok = it.a.some((a) => norm(a) === v) || isAccepted(it, input.value);
     input.disabled = true;
     document.getElementById("checkBtn").classList.add("hidden");
     input.style.borderColor = ok ? "var(--good)" : "var(--bad)";
     document.getElementById("qtext").innerHTML = blankHtml(it.q, it.a[0]);
-    answer(it, ok, it.a.join(" / "));
+    answer(it, ok, it.a.join(" / "), null, input.value);
   };
 }
 
@@ -261,13 +271,13 @@ function renderOrder(it, body) {
   });
   $check.onclick = () => {
     const attempt = built.map((k) => tiles[k].w).join(" ");
-    const ok = norm(attempt) === norm(it.ko);
+    const ok = norm(attempt) === norm(it.ko) || isAccepted(it, attempt);
     $check.classList.add("hidden");
     $built.querySelectorAll("button").forEach((b) => b.disabled = true);
     body.querySelectorAll("#tiles button").forEach((b) => b.disabled = true);
     $built.style.borderColor = ok ? "var(--good)" : "var(--bad)";
     $built.style.borderStyle = "solid";
-    answer(it, ok, it.ko);
+    answer(it, ok, it.ko, null, attempt);
   };
 }
 
@@ -299,9 +309,9 @@ function renderFree(it, body) {
     if (!v) return;
     input.disabled = true;
     document.getElementById("checkBtn").classList.add("hidden");
-    if (it.a.some((a) => stripSubject(norm(a)) === v)) { input.style.borderColor = "var(--good)"; return answer(it, true); }
+    if (it.a.some((a) => stripSubject(norm(a)) === v) || isAccepted(it, input.value)) { input.style.borderColor = "var(--good)"; return answer(it, true); }
     const missing = it.k.filter((group) => !group.some((form) => v.includes(norm(form))));
-    if (missing.length) { input.style.borderColor = "var(--bad)"; return answer(it, false, it.a[0], missing); }
+    if (missing.length) { input.style.borderColor = "var(--bad)"; return answer(it, false, it.a[0], missing, input.value); }
     // all key forms present, but worded differently
     document.getElementById("self").innerHTML = `
       <div class="feedback good">
@@ -311,12 +321,12 @@ function renderFree(it, body) {
         <div class="small muted" style="margin-top:6px">Is yours correct too?</div>
       </div>
       <div class="row"><button class="btn secondary" id="selfNo">I made a mistake</button><button class="btn" id="selfYes">Mine is right</button></div>`;
-    document.getElementById("selfYes").onclick = () => { document.getElementById("self").innerHTML = ""; input.style.borderColor = "var(--good)"; answer(it, true); };
-    document.getElementById("selfNo").onclick = () => { document.getElementById("self").innerHTML = ""; input.style.borderColor = "var(--bad)"; answer(it, false, it.a[0]); };
+    document.getElementById("selfYes").onclick = () => { document.getElementById("self").innerHTML = ""; input.style.borderColor = "var(--good)"; accept(it, input.value); answer(it, true); };
+    document.getElementById("selfNo").onclick = () => { document.getElementById("self").innerHTML = ""; input.style.borderColor = "var(--bad)"; answer(it, false, it.a[0], null, null); };
   };
 }
 
-function answer(it, ok, correctText, missing) {
+function answer(it, ok, correctText, missing, given) {
   session.answered++;
   session.ids.add(it.id);
   const firstTry = !session.retried.has(it.id);
@@ -335,13 +345,16 @@ function answer(it, ok, correctText, missing) {
   fb.innerHTML = ok
     ? `<div class="feedback good">✓ 맞아요!${it.t === "free" ? `<div class="small" style="margin-top:6px">${it.a.map(esc).join(" · ")}</div>` : it.t === "order" ? "" : ` <span class="muted small">${esc(TIPS[it.g] ? it.g : "")}</span>`}</div>`
     : `<div class="feedback bad">
-        <div>Not quite. The answer is:</div>
+        <div>Almost! The answer I was looking for:</div>
         <div class="ans">${esc(correctText === "(nothing)" ? "nothing (no particle)" : correctText)}</div>
         ${missing && missing.length ? `<div class="small" style="margin-top:6px">Check these forms: <b>${missing.map((g) => esc(spaced(g[0], it.a[0]))).join(", ")}</b></div>` : ""}
         ${it.t === "free" ? (it.a.length > 1 ? `<div class="small" style="margin-top:6px">Also correct: ${it.a.slice(1).map(esc).join(" · ")}</div>` : "") + `<div class="tip"><b>Use</b> · ${esc(it.h)}</div>` : `<div class="tip"><b>${esc(it.g)}</b> · ${esc(TIPS[it.g] || "")}</div>`}
-        ${firstTry ? `<div class="small muted" style="margin-top:6px">This one will come back in a moment.</div>` : ""}
-      </div>`;
-  if (it.en && it.t !== "order") {
+        ${firstTry ? `<div class="small muted" style="margin-top:6px">We'll practise this one again in a moment.</div>` : ""}
+      </div>
+      ${given && it.t !== "mc" ? `<button class="btn secondary" id="mineOk" style="margin:-4px 0 14px">✓ Mine is correct too</button>` : ""}`;
+  const mine = document.getElementById("mineOk");
+  if (mine) mine.onclick = () => overrule(it, given, correctText, firstTry);
+  if (it.en && it.t !== "order" && it.t !== "free") {
     const b = document.querySelector(".en-btn"); if (b) b.remove();
     const t = document.querySelector(".en-txt"); if (t) t.classList.add("hidden");
     fb.insertAdjacentHTML("beforeend", `<div class="small muted" style="margin:-6px 0 12px">🇬🇧 ${esc(it.en)}</div>`);
@@ -355,12 +368,33 @@ function answer(it, ok, correctText, missing) {
   };
 }
 
+// You know your answer is right too: count it, and accept it from now on.
+function overrule(it, given, correctText, firstTry) {
+  const s = stats[it.id];
+  if (s) { s.w = Math.max(0, s.w - 1); s.c++; s.s = 1; s.last = "r"; store.set("stats", stats); }
+  if (firstTry) {
+    session.right++;
+    const j = session.queue.indexOf(it, session.i + 1);
+    if (j > -1) session.queue.splice(j, 1);
+  }
+  session.missed = session.missed.filter((m) => m !== it);
+  accept(it, given);
+  document.getElementById("fb").innerHTML = `
+    <div class="feedback good">
+      <div>👍 Counted as correct! This answer will be accepted from now on.</div>
+      <div class="small" style="margin-top:6px">Yours: <b>${esc(given)}</b></div>
+      <div class="small">The book's version: ${esc(correctText)}</div>
+    </div>`;
+  const bar = document.querySelector("#qbody .answer, #built");
+  if (bar) bar.style.borderColor = "var(--good)";
+}
+
 // ── Results ──────────────────────────────────────────────
 function renderResults() {
   const s = session;
   const firstTries = s.ids.size;
   const pct = firstTries ? Math.round((s.right / firstTries) * 100) : 0;
-  const msg = pct >= 90 ? "훌륭해요! Excellent." : pct >= 70 ? "잘했어요! Well done." : "괜찮아요. Keep going, the hard ones will come back.";
+  const msg = pct >= 90 ? "훌륭해요! Excellent." : pct >= 70 ? "잘했어요! Well done." : "괜찮아요! Every mistake is practice. The tricky ones will come back so you can nail them.";
   $app.innerHTML = `
     <header><h1>Done</h1></header>
     <div class="card">
@@ -387,6 +421,25 @@ function renderResults() {
 }
 
 // ── Progress & settings ──────────────────────────────────
+function acceptedList() {
+  const all = ITEMS.concat(FREE);
+  return Object.entries(accepted).flatMap(([id, list]) => {
+    const it = all.find((x) => x.id === id);
+    return it ? list.map((a) => ({ it, a })) : [];
+  });
+}
+function acceptedText() {
+  return acceptedList().map(({ it, a }) =>
+    `${it.id} | ${it.t === "free" || it.t === "order" ? it.en : it.q} | book: ${it.t === "order" ? it.ko : Array.isArray(it.a) ? it.a[0] : it.a} | mine: ${a}`).join("\n");
+}
+function acceptedHtml() {
+  const list = acceptedList();
+  if (!list.length) return `<p class="small muted" style="margin:0">None yet. When the app marks an answer wrong but you're sure yours is right, tap "Mine is correct too".</p>`;
+  return `<ul class="list">${list.map(({ it, a }) => `<li><div class="small muted">${esc(it.t === "free" || it.t === "order" ? it.en : it.q)}</div><b>${esc(a)}</b></li>`).join("")}</ul>
+    <p class="small muted">Send this list to Claude now and then, so they can be checked and added for good.</p>
+    <button class="btn secondary" id="copyAccepted">Copy list</button>`;
+}
+
 function renderStats() {
   const max = learnedThrough();
   const manual = store.get("learned", "auto");
@@ -417,10 +470,20 @@ function renderStats() {
       <p class="small muted">Use this if you skip a week or move ahead faster.</p>
     </div>
 
+    <h2>Answers you counted as correct</h2>
+    <div class="card">${acceptedHtml()}</div>
+
     <h2>Reset</h2>
     <button class="btn secondary" id="resetBtn">Clear my progress on this device</button>
     <p class="small muted">Progress is saved separately on your Mac and your iPhone.</p>`;
   document.getElementById("backBtn").onclick = renderHome;
+  const copy = document.getElementById("copyAccepted");
+  if (copy) copy.onclick = () => {
+    const text = acceptedText();
+    const done = () => { copy.textContent = "Copied ✓"; };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => prompt("Copy this:", text));
+    else prompt("Copy this:", text);
+  };
   document.getElementById("learnedSel").onchange = (e) => {
     const v = e.target.value;
     store.set("learned", v === "auto" ? "auto" : Number(v));
