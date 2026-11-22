@@ -61,7 +61,7 @@ function poolFor(sel) {
   const irr = IRREG.filter((it) => it.c <= max);
   if (sel === "free") return free;
   if (sel === "irregular") return irr;
-  if (sel === "mistakes") return unlocked.concat(free, irr).filter((it) => stats[it.id] && stats[it.id].last === "w");
+  if (sel === "mistakes") return unlocked.concat(free, irr).filter(isMistake);
   return unlocked.filter((it) => it.c === sel);
 }
 
@@ -86,6 +86,10 @@ function pickSession(pool, n) {
   return chosen;
 }
 
+// A mistake stays on the list until you get it right twice in a row
+// (so getting it right on the retry in the same session doesn't remove it yet).
+function isMistake(it) { const s = stats[it.id]; return !!s && s.w > 0 && s.s < 2; }
+
 function record(it, ok) {
   const s = stats[it.id] || { c: 0, w: 0, s: 0, last: null };
   if (ok) { s.c++; s.s++; s.last = "r"; } else { s.w++; s.s = 0; s.last = "w"; }
@@ -102,12 +106,14 @@ function selectionLabel(sel) {
   return `Chapter ${c.n}: ${c.title}`;
 }
 
+let showNoMistakes = false;
 // ── Home ─────────────────────────────────────────────────
 function renderHome() {
   const max = learnedThrough();
   if (typeof selection === "number" && selection > max) selection = "all";
   const mistakes = poolFor("mistakes").length;
   if (selection === "mistakes" && !mistakes) selection = "all";
+  const noMistakesNote = showNoMistakes; showNoMistakes = false;
   // free translation and irregulars start from their own buttons at the bottom
   if (selection === "free" || selection === "irregular") selection = "all";
   const pool = poolFor(selection);
@@ -128,7 +134,7 @@ function renderHome() {
     <h2>Grammar drills</h2>
     <div class="row whole">
       <button class="btn secondary whole-btn ${selection === "all" ? "sel" : ""}" data-sel="all">Whole book</button>
-      <button class="btn secondary whole-btn ${selection === "mistakes" ? "sel" : ""}" data-sel="mistakes" ${mistakes ? "" : "disabled"}>
+      <button class="btn secondary whole-btn ${selection === "mistakes" ? "sel" : ""}" data-sel="mistakes">
         My mistakes${mistakes ? ` (${mistakes})` : ""}
       </button>
     </div>
@@ -139,6 +145,7 @@ function renderHome() {
           <b>${c.n}과</b><span>${locked ? "locked" : esc(c.grammar[0])}</span></button>`;
       }).join("")}
     </div>
+    ${noMistakesNote ? `<div class="selinfo small">🎉 No mistakes saved yet. Questions you get wrong (drills, free translation and irregular verbs) are collected here until you get them right twice in a row.</div>` : ""}
     <div class="selinfo">
       <strong>${esc(selectionLabel(selection))}</strong>
       ${typeof selection === "number" ? `<div class="muted small">${esc(chapter(selection).grammar.join(" · "))}</div>` : ""}
@@ -160,7 +167,10 @@ function renderHome() {
   `;
 
   $app.querySelectorAll("[data-start]").forEach((b) => b.onclick = () => startSession(b.dataset.start));
-    $app.querySelectorAll("[data-sel]").forEach((b) => b.onclick = () => { selection = b.dataset.sel; store.set("selection", selection); renderHome(); });
+    $app.querySelectorAll("[data-sel]").forEach((b) => b.onclick = () => {
+    if (b.dataset.sel === "mistakes" && !mistakes) { showNoMistakes = true; renderHome(); return; }
+    selection = b.dataset.sel; store.set("selection", selection); renderHome();
+  });
   $app.querySelectorAll("[data-ch]").forEach((b) => b.onclick = () => {
     if (b.disabled) return;
     selection = Number(b.dataset.ch); store.set("selection", selection); renderHome();
