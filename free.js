@@ -71,10 +71,10 @@ const FREE = [
   { c: 19, en: "I go to the bakery to buy bread.", a: ["빵을 사러 빵집에 가요."], k: [["사러"], ["가요", "갑니다"]], h: "사다 + -러 가다" },
   { c: 19, en: "Let's go eat lunch together.", a: ["같이 점심을 먹으러 갑시다.", "같이 점심 먹으러 갑시다.", "점심을 같이 먹으러 갑시다."], k: [["먹으러"], ["갑시다"]], h: "먹다 + -으러, 가다 + -ㅂ시다" },
   { c: 19, en: "I went to the bank with my friend.", a: ["친구랑 은행에 갔어요.", "친구하고 은행에 갔어요.", "친구랑 같이 은행에 갔어요."], k: [["랑", "하고"], ["갔어요"]], h: "N랑, 가다 + past" },
-  { c: 20, en: "My grandmother is sleeping.", a: ["할머니께서 주무세요.", "할머니께서 주무시고 계세요."], k: [["께서"], ["주무세요", "주무시고계세요", "주무시고있어요"]], h: "께서 + 자다 → 주무시다" },
+  { c: 20, en: "My grandmother is sleeping.", a: ["할머니께서 주무세요.", "할머니께서 주무시고 계세요."], k: [["께서"], ["주무세요", "주무시고계세요"]], h: "께서 + 자다 → 주무시다" },
   { c: 20, en: "My father reads a book.", a: ["아버지께서 책을 읽으세요."], k: [["께서"], ["읽으세요"]], h: "께서 + 읽다 + -으시-" },
   { c: 20, en: "My teacher went to Korea.", a: ["선생님께서 한국에 가셨어요."], k: [["께서"], ["가셨어요"]], h: "께서 + 가다 + -시- + past" },
-  { c: 20, en: "My grandfather is eating lunch.", a: ["할아버지께서 점심을 드세요.", "할아버지께서 점심을 드시고 계세요.", "할아버지께서 점심을 드시고 있어요."], k: [["께서"], ["드세요", "드시고계세요", "드시고있어요"]], h: "께서 + 먹다 → 드시다" },
+  { c: 20, en: "My grandfather is eating lunch.", a: ["할아버지께서 점심을 드세요.", "할아버지께서 점심을 드시고 계세요."], k: [["께서"], ["드세요", "드시고계세요"]], h: "께서 + 먹다 → 드시다" },
 ];
 
 // Second batch: more practice for later chapters, mixing in earlier grammar.
@@ -157,7 +157,7 @@ FREE.push(
   { c: 20, en: "My grandmother likes flowers, so I bought flowers.", a: ["할머니께서 꽃을 좋아하셔서 꽃을 샀어요."], k: [["좋아하셔서"], ["샀어요"]], h: "-시- + -어서 → 하셔서, 사다 + past" },
   { c: 20, en: "Grandfather, please eat.", a: ["할아버지, 드세요.", "할아버지, 많이 드세요."], k: [["드세요"]], h: "먹다 → 드시다 + -세요" },
   { c: 20, en: "My teacher is at home.", a: ["선생님께서 댁에 계세요."], k: [["께서"], ["댁에"], ["계세요"]], h: "께서, 집 → 댁, 있다 → 계시다" },
-  { c: 20, en: "My mother is reading a book.", a: ["어머니께서 책을 읽고 계세요.", "어머니께서 책을 읽으세요.", "어머니께서 책을 읽고 있으세요."], k: [["께서"], ["읽고계세요", "읽으세요", "읽고있으세요"]], h: "께서, -고 계시다" },
+  { c: 20, en: "My mother is reading a book.", a: ["어머니께서 책을 읽고 계세요.", "어머니께서 책을 읽으세요."], k: [["께서"], ["읽고계세요", "읽으세요"]], h: "께서, -고 계시다" },
   { c: 20, en: "Did your father go to work?", a: ["아버지께서 회사에 가셨어요?"], k: [["가셨어요"]], h: "가다 + -시- + past" },
   { c: 20, en: "My grandmother was sick, so she went to the hospital.", a: ["할머니께서 아프셔서 병원에 가셨어요."], k: [["아프셔서"], ["가셨어요"]], h: "아프다 + -시- + -어서, 가다 + -시- + past" },
 );

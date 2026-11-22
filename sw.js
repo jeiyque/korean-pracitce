@@ -1,6 +1,6 @@
 // Offline cache. Bump VERSION whenever the app or exercises change,
 // so phones and laptops pick up the new files the next time they're online.
-const VERSION = "kgp-v11";
+const VERSION = "kgp-v12";
 const FILES = ["./", "index.html", "app.js", "data.js", "free.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
