@@ -187,6 +187,7 @@ function renderQuestion() {
 
 function renderMC(it, body) {
   body.innerHTML = `
+    ${it.ctx ? `<div class="ctx">${esc(it.ctx)}</div>` : ""}
     <div class="q" id="qtext">${blankHtml(it.q)}</div>
     <div class="opts">${shuffle(it.o).map((o) => `<button class="opt" data-o="${esc(o)}">${esc(o === "(nothing)" ? "— (nothing)" : o)}</button>`).join("")}</div>`;
   body.querySelectorAll(".opt").forEach((b) => b.onclick = () => {
@@ -203,6 +204,7 @@ function renderMC(it, body) {
 
 function renderType(it, body) {
   body.innerHTML = `
+    ${it.ctx ? `<div class="ctx">${esc(it.ctx)}</div>` : ""}
     <div class="q" id="qtext">${blankHtml(it.q)}</div>
     <div class="hint">${esc(it.h || "")}</div>
     <form id="tf" autocomplete="off">
