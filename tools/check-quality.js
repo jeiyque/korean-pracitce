@@ -18,6 +18,7 @@ const SOUND_ONLY = new Set(["이다", "은/는", "이/가", "이/가 아니다",
 
 // final consonant of a Hangul syllable: 0 = none, 8 = ㄹ
 const jong = (ch) => { const c = ch.charCodeAt(0) - 0xac00; return c >= 0 && c < 11172 ? c % 28 : -1; };
+const cho = (ch) => { const c = ch.charCodeAt(0) - 0xac00; return c >= 0 && c < 11172 ? Math.floor(c / 588) : -1; };
 const lastHangul = (s) => { const m = s.match(/[가-힣](?=[^가-힣]*$)/); return m ? m[0] : ""; };
 
 function fullSentences(it) {
@@ -84,6 +85,17 @@ for (const it of ITEMS) {
       };
       if (ans in expect && !expect[ans]) bad(it, `sound rule: "${ans}" does not fit after "${prev}"`);
     }
+  }
+  // verb-ending drills: the blank must hold the whole conjugated verb (so the tip matches
+  // what is tested), and the dictionary form must be shown in the question or the hint
+  if ((it.t === "mc" || it.t === "type") && it.g.startsWith("-")) {
+    const src = ((it.q.match(/\(([^)]*)\)/) || [])[1] || "") + " " + (it.h || "");
+    const m = src.match(/([가-힣]+(?: [가-힣]+)?)다(?![가-힣])/);
+    const ans = it.t === "mc" ? it.a : it.a[0];
+    const SUPPLETIVE = /^(계|주무|드|댁|말씀)/;
+    if (ans === "댁") { /* vocabulary item: 집 → 댁 */ }
+    else if (!m) bad(it, "verb drill needs the dictionary form (e.g. 먹다) in the question or hint");
+    else if (!SUPPLETIVE.test(ans) && cho(ans[0]) !== cho(m[1][0])) bad(it, `blank "${ans}" does not contain the verb ${m[1]}다 (only an ending is blanked)`);
   }
   for (const s of fullSentences(it)) for (const [re, msg] of RULES) if (re.test(s)) bad(it, `${msg}  | ${s}`);
 }
