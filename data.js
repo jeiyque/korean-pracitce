@@ -224,13 +224,13 @@ const ITEMS = [
 
   // ── Chapter 11 ──────────────────────────────────────────
   { c: 11, g: "-어서/-아서", t: "mc", q: "떡볶이가 ___ 못 먹어요. (맵다)", a: "매워서", o: ["매워서", "맵어서", "매우서"], ctx: "At a restaurant, a friend offers you tteokbokki. You explain why you can't.", en: "Tteokbokki is spicy, so I can't eat it." },
-  { c: 11, g: "-고 싶다", t: "mc", q: "김밥을 먹___ 싶어요.", a: "고", o: ["고", "어", "지"], en: "I want to eat gimbap." },
+  { c: 11, g: "-고 싶다", t: "mc", q: "토요일에 김밥을 ___. (먹다, wanted to)", a: "먹고 싶었어요", o: ["먹고 싶었어요", "먹었고 싶어요", "먹고 싶어었요"], ctx: "Telling a friend what you were craving at lunch on Saturday.", en: "On Saturday I wanted to eat gimbap." },
   { c: 11, g: "-어서/-아서", t: "mc", q: "음식이 ___ 많이 먹었어요. (맛있다)", a: "맛있어서", o: ["맛있어서", "맛있아서", "맛있었어서"], ctx: "Telling a friend about yesterday's dinner.", en: "The food was delicious, so I ate a lot." },
   { c: 11, g: "-어서/-아서", t: "mc", q: "국이 ___ 안 먹어요. (짜다)", a: "짜서", o: ["짜서", "짜아서", "짜어서"], ctx: "At the cafeteria, explaining why you're leaving the soup.", en: "The soup is salty, so I don't eat it." },
   { c: 11, g: "-고 싶다", t: "mc", q: "불고기를 ___. (먹다, want)", a: "먹고 싶어요", o: ["먹고 싶어요", "먹어 싶어요", "먹고 싶아요"], ctx: "Looking at the menu with a friend.", en: "I want to eat bulgogi." },
   { c: 11, g: "-어서/-아서", t: "type", q: "초콜릿이 ___ 좋아요.", h: "달다, -아서", a: ["달아서"], ctx: "Explaining why you love chocolate.", en: "Chocolate is sweet, so I like it." },
-  { c: 11, g: "-고 싶다", t: "type", q: "비빔밥을 먹고 ___.", h: "싶다, -어요", a: ["싶어요"], en: "I want to eat bibimbap." },
-  { c: 11, g: "-고 싶다", t: "type", q: "음료수를 ___ 싶어요.", h: "마시다", a: ["마시고"], ctx: "You're thirsty after a long walk.", en: "I want to drink a beverage." },
+  { c: 11, g: "-고 싶다", t: "type", q: "배가 고파서 비빔밥을 ___.", h: "먹다 + -고 싶다", a: ["먹고 싶어요"], ctx: "You skipped breakfast and you're looking at the menu.", en: "I'm hungry, so I want to eat bibimbap." },
+  { c: 11, g: "-고 싶다", t: "type", q: "음료수를 ___?", h: "마시다 + -고 싶다, question", a: ["마시고 싶어요"], ctx: "After the soccer game your friend looks thirsty. You ask:", en: "Do you want to drink something?" },
   { c: 11, g: "-어서/-아서", t: "type", q: "음식이 ___ 안 먹어요.", h: "맛없다, -어서", a: ["맛없어서"], ctx: "Explaining why you never eat at this restaurant.", en: "The food tastes bad, so I don't eat it." },
   { c: 11, g: "-어서/-아서", t: "type", q: "날씨가 ___ 집에 있어요.", h: "춥다, -어서", a: ["추워서"], ctx: "A friend asks why you're staying in today.", en: "It's cold, so I stay at home." },
   { c: 11, g: "-어서/-아서", t: "order", en: "I can't eat tteokbokki well because it's spicy.", ko: "떡볶이는 매워서 잘 못 먹어요." },

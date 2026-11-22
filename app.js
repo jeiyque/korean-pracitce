@@ -167,6 +167,11 @@ function blankHtml(q, fill) {
   return parts.join(`<span class="blank">${inner}</span>`);
 }
 
+// For grammar where the meaning decides the answer, show what you want to say up front.
+// Pure sound rules (consonant/vowel endings) keep the English behind a button.
+const SOUND_ONLY = new Set(["이다", "은/는", "이/가", "이/가 아니다", "을/를", "과/와", "으로/로", "이랑/랑"]);
+function sayIt(it) { return !SOUND_ONLY.has(it.g); }
+
 function renderQuestion() {
   const it = session.queue[session.i];
   const total = session.queue.length;
@@ -201,7 +206,7 @@ function renderMC(it, body) {
   body.innerHTML = `
     ${it.ctx ? `<div class="ctx">${esc(it.ctx)}</div>` : ""}
     <div class="q" id="qtext">${blankHtml(it.q)}</div>
-    ${it.en ? `<button class="icon-btn en-btn" style="padding-left:0">Show English</button><div class="hint hidden en-txt">${esc(it.en)}</div>` : ""}
+    ${it.en ? (sayIt(it) ? `<div class="say">💬 You want to say: <b>${esc(it.en)}</b></div>` : `<button class="icon-btn en-btn" style="padding-left:0">Show English</button><div class="hint hidden en-txt">${esc(it.en)}</div>`) : ""}
     <div class="opts">${shuffle(it.o).map((o) => `<button class="opt" data-o="${esc(o)}">${esc(o === "(nothing)" ? "— (nothing)" : o)}</button>`).join("")}</div>`;
   body.querySelectorAll(".opt").forEach((b) => b.onclick = () => {
     const ok = b.dataset.o === it.a;
@@ -219,7 +224,7 @@ function renderType(it, body) {
   body.innerHTML = `
     ${it.ctx ? `<div class="ctx">${esc(it.ctx)}</div>` : ""}
     <div class="q" id="qtext">${blankHtml(it.q)}</div>
-    ${it.en ? `<button class="icon-btn en-btn" style="padding-left:0">Show English</button><div class="hint hidden en-txt">${esc(it.en)}</div>` : ""}
+    ${it.en ? (sayIt(it) ? `<div class="say">💬 You want to say: <b>${esc(it.en)}</b></div>` : `<button class="icon-btn en-btn" style="padding-left:0">Show English</button><div class="hint hidden en-txt">${esc(it.en)}</div>`) : ""}
     <div class="hint">${esc(it.h || "")}</div>
     <form id="tf" autocomplete="off">
       <input class="answer" id="ans" lang="ko" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="한국어로 쓰세요">
@@ -354,7 +359,7 @@ function answer(it, ok, correctText, missing, given) {
       ${given && it.t !== "mc" ? `<button class="btn secondary" id="mineOk" style="margin:-4px 0 14px">✓ Mine is correct too</button>` : ""}`;
   const mine = document.getElementById("mineOk");
   if (mine) mine.onclick = () => overrule(it, given, correctText, firstTry);
-  if (it.en && it.t !== "order" && it.t !== "free") {
+  if (it.en && it.t !== "order" && it.t !== "free" && !sayIt(it)) {
     const b = document.querySelector(".en-btn"); if (b) b.remove();
     const t = document.querySelector(".en-txt"); if (t) t.classList.add("hidden");
     fb.insertAdjacentHTML("beforeend", `<div class="small muted" style="margin:-6px 0 12px">🇬🇧 ${esc(it.en)}</div>`);
