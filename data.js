@@ -57,7 +57,7 @@ const TIPS = {
   "-어서/-아서": "Reason 'because / so'. 매워서 못 먹어요. Never with past tense or with -읍시다 / -으세요.",
   "-고 싶다": "'Want to': stem + 고 싶어요 (먹고 싶어요).",
   "-지만": "'But / although': 비싸지만 좋아요.",
-  "보다": "Comparison 'than': A가 B보다 더 비싸요 = A is more expensive than B.",
+  "보다": "Comparison 'than': 보다 goes right after the thing you compare against. The word order can change: 모자보다 신발이 더 비싸요 = 신발이 모자보다 더 비싸요 = The shoes are more expensive than the hat.",
   "-을 수 있다/없다": "Can / can't. Consonant stem + 을 수 있어요 (먹을 수 있어요), vowel stem + ㄹ 수 있어요 (출 수 있어요). ㄹ stem: 만들 수 있어요.",
   "-고 있다": "Action in progress '-ing': 그리고 있어요, 공부하고 있어요.",
   "-기 전에": "'Before doing': stem + 기 전에 (가기 전에).",

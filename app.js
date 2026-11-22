@@ -234,6 +234,12 @@ function renderType(it, body) {
   setTimeout(() => input.focus(), 50);
   document.getElementById("tf").onsubmit = (e) => {
     e.preventDefault();
+    // finish any half-typed Korean syllable (iPhone keyboard) before reading the answer
+    input.blur();
+    setTimeout(check, 30);
+  };
+  function check() {
+    if (input.disabled) return;
     const v = norm(input.value);
     if (!v) return;
     const ok = it.a.some((a) => norm(a) === v) || isAccepted(it, input.value);
@@ -242,7 +248,7 @@ function renderType(it, body) {
     input.style.borderColor = ok ? "var(--good)" : "var(--bad)";
     document.getElementById("qtext").innerHTML = blankHtml(it.q, it.a[0]);
     answer(it, ok, it.a.join(" / "), null, input.value);
-  };
+  }
 }
 
 function renderOrder(it, body) {
@@ -352,6 +358,7 @@ function answer(it, ok, correctText, missing, given) {
     : `<div class="feedback bad">
         <div>Almost! The answer I was looking for:</div>
         <div class="ans">${esc(correctText === "(nothing)" ? "nothing (no particle)" : correctText)}</div>
+        ${given && it.t === "type" ? `<div class="small" style="margin-top:6px">You typed: <b>${esc(given)}</b></div>` : ""}
         ${missing && missing.length ? `<div class="small" style="margin-top:6px">Check these forms: <b>${missing.map((g) => esc(spaced(g[0], it.a[0]))).join(", ")}</b></div>` : ""}
         ${it.t === "free" ? (it.a.length > 1 ? `<div class="small" style="margin-top:6px">Also correct: ${it.a.slice(1).map(esc).join(" · ")}</div>` : "") + `<div class="tip"><b>Use</b> · ${esc(it.h)}</div>` : `<div class="tip"><b>${esc(it.g)}</b> · ${esc(TIPS[it.g] || "")}</div>`}
         ${firstTry ? `<div class="small muted" style="margin-top:6px">We'll practise this one again in a moment.</div>` : ""}
