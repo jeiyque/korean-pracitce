@@ -7,7 +7,8 @@ const path = require("path");
 const root = path.join(__dirname, "..");
 const ctx = {};
 new Function("ctx", fs.readFileSync(path.join(root, "data.js"), "utf8") + "\n" +
-  fs.readFileSync(path.join(root, "free.js"), "utf8") +
+  fs.readFileSync(path.join(root, "free.js"), "utf8") + "\n" +
+  fs.readFileSync(path.join(root, "grammar.js"), "utf8") + "\nctx.GRAMMAR = GRAMMAR;" +
   "\nctx.ITEMS = ITEMS; ctx.FREE = FREE; ctx.TIPS = TIPS; ctx.CHAPTERS = CHAPTERS;")(ctx);
 const { ITEMS, FREE, TIPS, CHAPTERS } = ctx;
 
@@ -111,6 +112,15 @@ for (const it of FREE) {
     if (missing.length) bad(it, `accepted answer "${a}" lacks key form ${missing.map((g) => g.join("/")).join(", ")}`);
     for (const [re, msg] of RULES) if (re.test(a)) bad(it, `${msg}  | ${a}`);
   }
+}
+
+// ---- grammar summary ----
+for (const ch of CHAPTERS) for (const g of ch.grammar) {
+  const e = ctx.GRAMMAR[g];
+  const it = { id: `grammar ${g}` };
+  if (!e) { bad(it, "missing in the grammar summary (grammar.js)"); continue; }
+  if (!e.what || !e.form.length || !e.ex.length) bad(it, "needs what, form and ex");
+  for (const [ko] of e.ex) for (const [re, msg] of RULES) if (re.test(ko)) bad(it, `${msg}  | ${ko}`);
 }
 
 if (problems.length) { console.log(problems.join("\n")); console.log(`\n${problems.length} problems`); process.exit(1); }

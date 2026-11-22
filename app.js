@@ -120,6 +120,12 @@ function renderHome() {
       <div class="small muted">Write whole sentences yourself. Mixes every chapter you've learned, with a focus on verb endings (-고 싶어요, -아서, -으려고…). ${poolFor("free").length} sentences.</div>
     </button>
 
+    <h2>Grammar summary</h2>
+    <button class="card free-card" id="grammarBtn">
+      <b>📖 All grammar at a glance</b>
+      <div class="small muted">Rules, forms and examples for every chapter you've learned (1–${max}).</div>
+    </button>
+
     <h2>Grammar drills</h2>
     <div class="row whole">
       <button class="btn secondary whole-btn ${selection === "all" ? "sel" : ""}" data-sel="all">Whole book</button>
@@ -148,6 +154,47 @@ function renderHome() {
   });
   document.getElementById("startBtn").onclick = () => startSession(selection);
   document.getElementById("statsBtn").onclick = renderStats;
+  document.getElementById("grammarBtn").onclick = () => renderGrammar();
+}
+
+// ── Grammar summary ──────────────────────────────────────
+function grammarHtml(key) {
+  const g = GRAMMAR[key];
+  if (!g) return `<div class="gram"><h3>${esc(key)}</h3><p>${esc(TIPS[key] || "")}</p></div>`;
+  return `<div class="gram">
+    <h3>${esc(key)}</h3>
+    <p>${esc(g.what)}</p>
+    <table class="gtable"><tbody>${g.form.map(([when, end, ex]) =>
+      `<tr><td class="muted">${esc(when)}</td><td><b>${esc(end)}</b></td><td>${esc(ex)}</td></tr>`).join("")}</tbody></table>
+    <ul class="gex">${g.ex.map(([ko, en]) => `<li><span class="ko">${esc(ko)}</span><span class="small muted">${esc(en)}</span></li>`).join("")}</ul>
+    ${g.watch ? `<div class="gwatch">⚠️ ${esc(g.watch)}</div>` : ""}
+  </div>`;
+}
+
+function renderGrammar(openCh) {
+  const max = learnedThrough();
+  const open = openCh || 0;
+  $app.innerHTML = `
+    <header>
+      <button class="icon-btn" id="backBtn">‹ Home</button>
+      <h1 style="font-size:20px">Grammar</h1>
+      <span style="width:60px"></span>
+    </header>
+    <p class="muted small" style="margin-top:0">Chapters 1–${max}. ${esc(nextUnlockText())}</p>
+    ${CHAPTERS.filter((c) => c.n <= max).map((c) => `
+      <details class="card gch" ${c.n === open ? "open" : ""} id="g${c.n}">
+        <summary><div><b>${c.n}과</b> ${esc(c.title)}<div class="small muted">${esc(c.grammar.join(" · "))}</div></div></summary>
+        ${c.grammar.map(grammarHtml).join("")}
+        <button class="btn secondary" data-practice="${c.n}">Practise chapter ${c.n}</button>
+      </details>`).join("")}
+  `;
+  document.getElementById("backBtn").onclick = renderHome;
+  $app.querySelectorAll("[data-practice]").forEach((b) => b.onclick = () => {
+    selection = Number(b.dataset.practice); store.set("selection", selection); startSession(selection);
+  });
+  const el = document.getElementById("g" + open);
+  if (el && openCh) el.scrollIntoView();
+  else window.scrollTo(0, 0);
 }
 
 // ── Quiz ─────────────────────────────────────────────────
