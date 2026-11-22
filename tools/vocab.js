@@ -3,8 +3,9 @@
 // to make sure exercises only use words already taught.
 // Verbs/adjectives are listed as stems (plus irregular stem forms).
 module.exports = {
-  // always fine: pronouns, numbers, basic adverbs and particles-only words
-  0: "저 제 나 이 그 저기 여기 씨 네 아니요 좀 더 또 많이 잘 안 못 같이 지금 뭐 무엇 몇 한 두 세 번 우리 여러분 새 N".split(" "),
+  // always fine: pronouns, numbers, basic adverbs, plus words Jenny already knows from class
+  // (내일, 지난주, 친구, 가방, 사다, 시험, 우유, 신문, 재미있다, 배고프다, 이름, 누구)
+  0: "저 제 나 이 그 저기 여기 씨 네 아니요 좀 더 또 많이 잘 안 못 같이 지금 뭐 무엇 몇 한 두 세 번 우리 여러분 새 N 내일 지난주 지난 친구 가방 사 샀 시험 우유 신문 재미있 배 고프 고파 고팠 이름 누구 누가".split(" "),
   1: "한국 미국 멕시코 러시아 베트남 중국 선생님 학생 어느 나라 사람 안녕 안녕하 리사 미나 흐엉 지훈 쯔엉 나타샤".split(" "),
   2: "아버지 어머니 동생 언니 누나 오빠 형 가수 배우 회사원 의사 가족 이름 직업 반갑 반가 만나 아니".split(" "),
   3: "노래 드라마 음식 전화 하 해 했 합 좋아하 좋아해 가 갑 갔 먹 듣 들 크 커 작 예쁘 예뻐 좋 무슨 케이 팝 김치 비빔밥 여행 개 꽃 좋아합 좋아합니".split(" "),
