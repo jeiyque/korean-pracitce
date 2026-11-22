@@ -56,9 +56,11 @@ function poolFor(sel) {
 // Items you got wrong come back much more often; ones you keep getting right fade out.
 function weight(it) {
   const s = stats[it.id];
-  if (!s) return 3;
-  if (s.last === "w") return 8;
-  return Math.max(0.4, 3 - s.s);
+  // later chapters come up more often in free translation
+  const level = it.t === "free" ? 0.5 + it.c / 16 : 1;
+  if (!s) return 3 * level;
+  if (s.last === "w") return 8 * level;
+  return Math.max(0.4, 3 - s.s) * level;
 }
 function pickSession(pool, n) {
   const chosen = [];
