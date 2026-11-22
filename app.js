@@ -58,8 +58,10 @@ function poolFor(sel) {
   const unlocked = ITEMS.filter((it) => it.c <= max);
   const free = FREE.filter((it) => it.c <= max);
   if (sel === "all") return unlocked;
+  const irr = IRREG.filter((it) => it.c <= max);
   if (sel === "free") return free;
-  if (sel === "mistakes") return unlocked.concat(free).filter((it) => stats[it.id] && stats[it.id].last === "w");
+  if (sel === "irregular") return irr;
+  if (sel === "mistakes") return unlocked.concat(free, irr).filter((it) => stats[it.id] && stats[it.id].last === "w");
   return unlocked.filter((it) => it.c === sel);
 }
 
@@ -95,6 +97,7 @@ function selectionLabel(sel) {
   if (sel === "all") return `Whole book (chapters 1–${learnedThrough()})`;
   if (sel === "mistakes") return "My mistakes";
   if (sel === "free") return "Free translation";
+  if (sel === "irregular") return "Irregular verbs test";
   const c = chapter(sel);
   return `Chapter ${c.n}: ${c.title}`;
 }
@@ -105,6 +108,8 @@ function renderHome() {
   if (typeof selection === "number" && selection > max) selection = "all";
   const mistakes = poolFor("mistakes").length;
   if (selection === "mistakes" && !mistakes) selection = "all";
+  // free translation and irregulars start from their own buttons at the bottom
+  if (selection === "free" || selection === "irregular") selection = "all";
   const pool = poolFor(selection);
 
   $app.innerHTML = `
@@ -113,12 +118,6 @@ function renderHome() {
       <button class="icon-btn" id="statsBtn">Progress ›</button>
     </header>
     <p class="muted small" style="margin-top:0">세종학당 한국어 1 · ${esc(nextUnlockText())}</p>
-
-    <h2>Free translation</h2>
-    <button class="card free-card ${selection === "free" ? "sel" : ""}" data-sel="free">
-      <b>English → Korean sentences</b>
-      <div class="small muted">Write whole sentences yourself. Mixes every chapter you've learned, with a focus on verb endings (-고 싶어요, -아서, -으려고…). ${poolFor("free").length} sentences.</div>
-    </button>
 
     <h2>Grammar summary</h2>
     <button class="card free-card" id="grammarBtn">
@@ -144,10 +143,24 @@ function renderHome() {
       <strong>${esc(selectionLabel(selection))}</strong>
       ${typeof selection === "number" ? `<div class="muted small">${esc(chapter(selection).grammar.join(" · "))}</div>` : ""}
     </div>
-    <button class="btn" id="startBtn" ${pool.length ? "" : "disabled"}>Start · ${Math.min(selection === "free" ? FREE_LEN : SESSION_LEN, pool.length)} ${selection === "free" ? "sentences" : "questions"}</button>
+    <button class="btn" id="startBtn" ${pool.length ? "" : "disabled"}>Start · ${Math.min(SESSION_LEN, pool.length)} questions</button>
+
+    <h2>Free translation</h2>
+    <button class="card free-card" data-start="free">
+      <b>English → Korean sentences</b>
+      <div class="small muted">Write whole sentences yourself. Mixes every chapter you've learned, with a focus on verb endings (-고 싶어요, -아서, -으려고…). ${poolFor("free").length} sentences.</div>
+      <div class="small" style="margin-top:8px;color:var(--accent);font-weight:650">Start · ${Math.min(FREE_LEN, poolFor("free").length)} sentences ›</div>
+    </button>
+
+    <h2>Irregular verbs</h2>
+    <div class="row whole">
+      <button class="btn secondary whole-btn" id="irrStudyBtn">📚 Study</button>
+      <button class="btn secondary whole-btn" data-start="irregular">✏️ Test · ${poolFor("irregular").length} forms</button>
+    </div>
   `;
 
-  $app.querySelectorAll("[data-sel]").forEach((b) => b.onclick = () => { selection = b.dataset.sel; store.set("selection", selection); renderHome(); });
+  $app.querySelectorAll("[data-start]").forEach((b) => b.onclick = () => startSession(b.dataset.start));
+    $app.querySelectorAll("[data-sel]").forEach((b) => b.onclick = () => { selection = b.dataset.sel; store.set("selection", selection); renderHome(); });
   $app.querySelectorAll("[data-ch]").forEach((b) => b.onclick = () => {
     if (b.disabled) return;
     selection = Number(b.dataset.ch); store.set("selection", selection); renderHome();
@@ -155,6 +168,44 @@ function renderHome() {
   document.getElementById("startBtn").onclick = () => startSession(selection);
   document.getElementById("statsBtn").onclick = renderStats;
   document.getElementById("grammarBtn").onclick = () => renderGrammar();
+  document.getElementById("irrStudyBtn").onclick = renderIrregular;
+}
+
+// ── Irregular verbs: study list ──────────────────────────
+function renderIrregular() {
+  const max = learnedThrough();
+  const endings = IRR_ENDINGS.filter((e) => e.ch <= max);
+  const group = (g) => {
+    const words = g.words.filter((w) => w.ch <= max);
+    if (!words.length) return "";
+    return `<details class="card gch">
+      <summary><div><b>${esc(g.name)}</b><div class="small muted">${words.map((w) => esc(w.v)).join(" · ")}</div></div></summary>
+      <div class="gram" style="border-top:0;margin-top:6px;padding-top:0"><p>${esc(g.rule)}</p></div>
+      ${words.map((w) => {
+        const rows = IRREG.filter((it) => it.id.startsWith(`irr:${w.v}:`) && it.c <= max);
+        return `<div class="gram"><h3>${esc(w.v)} <span class="small muted" style="font-weight:400">${esc(w.en)}</span></h3>
+          <table class="gtable"><tbody>${rows.map((it) => `<tr><td class="muted">${esc(it.h)}</td><td><b>${esc(it.a[0])}</b></td></tr>`).join("")}</tbody></table></div>`;
+      }).join("")}
+    </details>`;
+  };
+  $app.innerHTML = `
+    <header>
+      <button class="icon-btn" id="backBtn">‹ Home</button>
+      <h1 style="font-size:20px">Irregular verbs</h1>
+      <span style="width:60px"></span>
+    </header>
+    <p class="muted small" style="margin-top:0">Every irregular verb and adjective you know, in every form taught up to chapter ${max} (${endings.length} endings). New forms appear as chapters unlock.</p>
+    ${IRR_GROUPS.map(group).join("")}
+    <details class="card gch">
+      <summary><div><b>${esc(IRR_MERGE.name)}</b><div class="small muted">${IRR_MERGE.words.map((w) => esc(w[0])).join(" · ")}</div></div></summary>
+      <div class="gram" style="border-top:0;margin-top:6px;padding-top:0"><p>${esc(IRR_MERGE.rule)}</p>
+      <table class="gtable"><tbody>${IRR_MERGE.words.map(([v, p, past]) => `<tr><td class="muted">${esc(v)}</td><td><b>${esc(p)}</b></td><td><b>${esc(past)}</b></td></tr>`).join("")}</tbody></table></div>
+    </details>
+    <button class="btn" id="irrTestBtn" style="margin-top:8px">Test me · ${poolFor("irregular").length} forms</button>
+  `;
+  document.getElementById("backBtn").onclick = renderHome;
+  document.getElementById("irrTestBtn").onclick = () => { selection = "irregular"; startSession("irregular"); };
+  window.scrollTo(0, 0);
 }
 
 // ── Grammar summary ──────────────────────────────────────
@@ -217,7 +268,7 @@ function blankHtml(q, fill) {
 // For grammar where the meaning decides the answer, show what you want to say up front.
 // Pure sound rules (consonant/vowel endings) keep the English behind a button.
 const SOUND_ONLY = new Set(["이다", "은/는", "이/가", "이/가 아니다", "을/를", "과/와", "으로/로", "이랑/랑"]);
-function sayIt(it) { return !SOUND_ONLY.has(it.g); }
+function sayIt(it) { return !SOUND_ONLY.has(it.g) && !it.irr; }
 
 function renderQuestion() {
   const it = session.queue[session.i];
@@ -232,7 +283,7 @@ function renderQuestion() {
     </header>
     <div class="bar"><i style="width:${(session.i / total) * 100}%"></i></div>
     <div class="card">
-      <div class="kind">${kinds[it.t]} · ${c.n}과</div>
+      <div class="kind">${it.irr ? "Conjugate · " + esc(it.g) : `${kinds[it.t]} · ${c.n}과`}</div>
       <div id="qbody"></div>
       <div id="fb"></div>
       <button class="btn hidden" id="nextBtn">Next</button>
@@ -406,6 +457,7 @@ function answer(it, ok, correctText, missing, given) {
         <div>Almost! The answer I was looking for:</div>
         <div class="ans">${esc(correctText === "(nothing)" ? "nothing (no particle)" : correctText)}</div>
         ${given && it.t === "type" ? `<div class="small" style="margin-top:6px">You typed: <b>${esc(given)}</b></div>` : ""}
+        ${it.trap ? `<div class="small" style="margin-top:6px">Careful: not <s>${esc(it.trap)}</s>. That would be the regular form.</div>` : ""}
         ${missing && missing.length ? `<div class="small" style="margin-top:6px">Check these forms: <b>${missing.map((g) => esc(spaced(g[0], it.a[0]))).join(", ")}</b></div>` : ""}
         ${it.t === "free" ? (it.a.length > 1 ? `<div class="small" style="margin-top:6px">Also correct: ${it.a.slice(1).map(esc).join(" · ")}</div>` : "") + `<div class="tip"><b>Use</b> · ${esc(it.h)}</div>` : `<div class="tip"><b>${esc(it.g)}</b> · ${esc(TIPS[it.g] || "")}</div>`}
         ${firstTry ? `<div class="small muted" style="margin-top:6px">We'll practise this one again in a moment.</div>` : ""}

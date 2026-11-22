@@ -15,4 +15,5 @@ After every change to `data.js` or `free.js`, run both checks. Each must report 
 ```
 node tools/check-vocab.js     # only words taught up to that chapter
 node tools/check-quality.js   # structure, sound rules, common grammar mistakes, answer keys
+node tools/check-irregular.js # irregular verb forms match the reviewed list (tools/irregular-expected.json)
 ```

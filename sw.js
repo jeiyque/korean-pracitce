@@ -1,7 +1,7 @@
 // Offline cache. Bump VERSION whenever the app or exercises change,
 // so phones and laptops pick up the new files the next time they're online.
-const VERSION = "kgp-v14";
-const FILES = ["./", "index.html", "app.js", "data.js", "free.js", "grammar.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
+const VERSION = "kgp-v15";
+const FILES = ["./", "index.html", "app.js", "data.js", "free.js", "grammar.js", "irregular.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
