@@ -64,6 +64,7 @@ for (const it of ITEMS) {
   if (it.t === "type") {
     if (!Array.isArray(it.a) || !it.a.length || it.a.some((a) => !a.trim())) bad(it, "empty typed answer");
     if (!it.h) bad(it, "typed drill needs a hint");
+    if (new Set(it.a.map(norm)).size !== it.a.length) bad(it, "two accepted answers differ only in spacing (spaces are ignored anyway)");
   }
   if (it.t === "order") {
     if (!it.ko || it.ko.split(" ").length < 2) bad(it, "word order needs at least 2 words");

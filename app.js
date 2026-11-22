@@ -359,7 +359,7 @@ function renderType(it, body) {
     document.getElementById("checkBtn").classList.add("hidden");
     input.style.borderColor = ok ? "var(--good)" : "var(--bad)";
     document.getElementById("qtext").innerHTML = blankHtml(it.q, it.a[0]);
-    answer(it, ok, it.a.join(" / "), null, input.value);
+    answer(it, ok, it.a[0], null, input.value);
   }
 }
 
@@ -469,6 +469,27 @@ function sparkle() {
   } catch (e) { /* no audio available: stay silent */ }
 }
 
+// Why another answer is also right (shown under the main answer)
+function altNote(main, alt) {
+  if (/못/.test(alt) && /지 못/.test(main)) return "short form: 못 + verb";
+  if (/^안 /.test(alt) && /지 않/.test(main)) return "short form: 안 + verb";
+  if (/해요$/.test(alt) && /돼요$/.test(main)) return "-어야 해요 means the same";
+  if (/다음에$/.test(alt)) return "다음에 means the same as 후에";
+  if (alt === "주어요") return "long form of 줘요";
+  if (alt === "한테") return "spoken form of 에게";
+  if (alt === "하고") return "same meaning, also common";
+  if (alt === "과") return "more formal / written";
+  if (alt === "드세요") return "honorific (chapter 20)";
+  return "";
+}
+function altsHtml(it) {
+  if (it.t !== "type" || it.a.length < 2) return "";
+  return `<div class="small" style="margin-top:6px">Also correct: ${it.a.slice(1).map((x) => {
+    const n = altNote(it.a[0], x);
+    return `<b>${esc(x)}</b>${n ? ` <span class="muted">(${esc(n)})</span>` : ""}`;
+  }).join(" · ")}</div>`;
+}
+
 function answer(it, ok, correctText, missing, given) {
   if (ok) sparkle();
   session.answered++;
@@ -491,6 +512,7 @@ function answer(it, ok, correctText, missing, given) {
     : `<div class="feedback bad">
         <div>Almost! The answer I was looking for:</div>
         <div class="ans">${esc(correctText === "(nothing)" ? "nothing (no particle)" : correctText)}</div>
+        ${altsHtml(it)}
         ${given && it.t === "type" ? `<div class="small" style="margin-top:6px">You typed: <b>${esc(given)}</b></div>` : ""}
         ${it.trap ? `<div class="small" style="margin-top:6px">Careful: not <s>${esc(it.trap)}</s>. That would be the regular form.</div>` : ""}
         ${missing && missing.length ? `<div class="small" style="margin-top:6px">Check these forms: <b>${missing.map((g) => esc(spaced(g[0], it.a[0]))).join(", ")}</b></div>` : ""}
